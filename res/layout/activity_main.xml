@@ -1,0 +1,33 @@
+<com.gnod.slidingbar.SideBarLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/sidebar_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+     >
+	<LinearLayout 
+	    android:id="@id/sidebar_layout_sidebar"
+	    android:layout_width="200dp"
+	    android:layout_height="match_parent"
+	    android:orientation="vertical"
+	    android:background="#77876862"
+	    >
+	</LinearLayout>
+	
+	<LinearLayout 
+	    android:id="@id/sidebar_layout_content"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:orientation="vertical"
+	    android:background="#357924"
+	    >
+	   <Button
+	       android:id="@+id/testbtn"
+	       android:layout_width="wrap_content"
+	       android:layout_height="wrap_content"
+	       android:text="Hello"
+	       >
+	       
+	   </Button>
+	    
+	</LinearLayout>
+
+</com.gnod.slidingbar.SideBarLayout>
