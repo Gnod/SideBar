@@ -1,8 +1,10 @@
 package com.gnod.slidingbar;
 
 import android.content.Context;
+import android.graphics.PointF;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.DragEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +18,10 @@ public class SideBarLayout extends ViewGroup{
 	public static final int SIDEBAR_SIDE_LEFT = 0;
 	public static final int SIDEBAR_SIDE_RIGHT = 1;
 	public static final int SIDEBAR_SIDE_BOTH = 2;
+	private static final int PRESSED_MOVE_HORIZANTAL = 0;
+	private static final int PRESSED_DOWN = 1;
+	private static final int PRESSED_DONE = 2;
+	private static final int PRESSED_MOVE_VERTICAL = 3;
 	
 	protected View leftSideBar = null;
 	protected View rightSideBar = null;
@@ -26,12 +32,12 @@ public class SideBarLayout extends ViewGroup{
 	private int sideBarSide = SIDEBAR_SIDE_LEFT;
 	private OnOpenListener openListener;
 	private OnCloseListener closeListener;
-	private boolean isPressed;
-	private int startX;
 	private int xOffset;
 	private int mainViewLeft;
 	private int mainViewTop;
 	private int mainViewBottom;
+	private int state = PRESSED_DOWN;
+	private PointF origPoint = new PointF();
 	
 	public SideBarLayout(Context context) {
         super(context);
@@ -102,66 +108,8 @@ public class SideBarLayout extends ViewGroup{
 		}
 	}
 
-//	@Override
-//	public boolean dispatchTouchEvent(MotionEvent ev) {
-//		Toast.makeText(getContext(), "sdf" + mainViewTop + " " + mainViewLeft + " " + mainViewBottom + " " + mainView.getWidth(), Toast.LENGTH_SHORT).show();
-//		if(mainView.getAnimation() != null) {
-//			return false;
-//		}
-//		
-//		Log.e("error", "" + ev.getX() + " " + ev.getY());
-//		int x = (int) ev.getX();
-//		int y = (int) ev.getY();
-//		if(!(mainView.getLeft() < x &&
-//			mainView.getRight() > x &&
-//			mainView.getTop() < y &&
-//			mainView.getBottom() > y)) {
-//			return false;
-//		}
-//		
-//		switch(ev.getAction()) {
-//		case MotionEvent.ACTION_DOWN:
-//			if(sideBarSide == SIDEBAR_SIDE_LEFT)
-//				leftSideBar.setVisibility(View.VISIBLE);
-//			if(sideBarSide == SIDEBAR_SIDE_RIGHT)
-//				rightSideBar.setVisibility(View.VISIBLE);
-//			startX = (int) ev.getX();
-//			isPressed = true;
-//			mainViewLeft = mainView.getLeft();
-//			Log.e("error", "" + ev.getX() + " " + ev.getY() + " down" + mainViewLeft);
-//			break;
-//		case MotionEvent.ACTION_CANCEL:
-//		case MotionEvent.ACTION_UP:
-//			if(isPressed && xOffset != 0) {
-//				isPressed = false;
-//				toggleSideBar();
-//				return true;
-//			} 
-//			break;
-//		case MotionEvent.ACTION_MOVE:
-//			Log.e("error", "" + ev.getX() + " " + ev.getY());
-//			if(isPressed == false)
-//				break;
-//			xOffset = (int) (ev.getX() - startX);
-//			Log.e("error", "" + ev.getX() + " " + ev.getY() + " move" + xOffset);
-//			meansureManiViewLayout();
-//			break;
-//		}
-//		return true;
-//	}
-
-//	@Override
-//	public boolean onTouchEvent(MotionEvent event) {
-//		// TODO Auto-generated method stub
-//		Log.e("touch", event.getAction() + " ");
-//		Toast.makeText(getContext(), event.getAction() + " ", Toast.LENGTH_SHORT).show();
-//
-//		
-//		return true;
-//	}
-
 	@Override
-	public boolean onTouchEvent(MotionEvent ev) {
+	public boolean dispatchTouchEvent(MotionEvent ev) {
 		if(mainView.getAnimation() != null) {
 			return false;
 		}
@@ -177,32 +125,43 @@ public class SideBarLayout extends ViewGroup{
 		
 		switch(ev.getAction()) {
 		case MotionEvent.ACTION_DOWN:
+			state = PRESSED_DOWN;
 			if(sideBarSide == SIDEBAR_SIDE_LEFT)
 				leftSideBar.setVisibility(View.VISIBLE);
 			if(sideBarSide == SIDEBAR_SIDE_RIGHT)
 				rightSideBar.setVisibility(View.VISIBLE);
-			startX = (int) ev.getX();
-			isPressed = true;
+			origPoint.set(ev.getX(), ev.getY());
 			mainViewLeft = mainView.getLeft();
-			return true;
+			break;
 		case MotionEvent.ACTION_CANCEL:
 		case MotionEvent.ACTION_UP:
-			if(isPressed) {
-				isPressed = false;
-				if(xOffset != 0)
-					toggleSideBar();
-			} 
+			if(state == PRESSED_MOVE_HORIZANTAL)
+				toggleSideBar();
+			state = PRESSED_DONE;
 			break;
 		case MotionEvent.ACTION_MOVE:
-			if(isPressed == false)
+			if(state  != PRESSED_DOWN && state != PRESSED_MOVE_HORIZANTAL)
 				break;
-			xOffset = (int) (ev.getX() - startX);
-			meansureManiViewLayout();
-			return true;
+			xOffset = (int) (ev.getX() - origPoint.x);
+			int yOffset = (int)(ev.getY() - origPoint.y);
+			if(state == PRESSED_DOWN) {
+				if(yOffset > 10 || yOffset < -10) {
+					state = PRESSED_MOVE_VERTICAL;
+					break;
+				}
+				if(xOffset < -50 || xOffset > 50) {
+					state = PRESSED_MOVE_HORIZANTAL;
+					ev.setAction(MotionEvent.ACTION_CANCEL);
+				}
+			} else if(state == PRESSED_MOVE_HORIZANTAL) {
+				meansureManiViewLayout();
+				return true;
+			}
+			break;
 		}
-		return super.onTouchEvent(ev);
+		return super.dispatchTouchEvent(ev);
 	}
-	
+
 	public void meansureManiViewLayout(){
 		int left = mainViewLeft + xOffset;
 
